@@ -1,20 +1,36 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useEffect } from 'react';
+import { StyleSheet, View, Button } from 'react-native';
+import ExplorerMap from './src/components/MapView';
+import { useLocation } from './src/hooks/useLocation';
+import { initDB } from './src/lib/storage';
 
 export default function App() {
+  const { isTracking, startTracking, stopTracking } = useLocation();
+
+  useEffect(() => {
+    initDB();
+  }, []);
+
   return (
     <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
+      <ExplorerMap />
+      <View style={styles.controls}>
+        <Button 
+          title={isTracking ? "Stop Exploring" : "Start Exploring"} 
+          onPress={isTracking ? stopTracking : startTracking} 
+          color={isTracking ? "red" : "green"}
+        />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  container: { flex: 1 },
+  controls: { 
+    position: 'absolute', 
+    bottom: 50, 
+    width: '100%', 
+    alignItems: 'center' 
+  }
 });
