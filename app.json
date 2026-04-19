@@ -26,7 +26,12 @@
         "googleMaps": {
           "apiKey": "AIzaSyDMe6Gtz19tyYDmhlhA3gg50rKPjq1vfE8"
         }
-      }
+      },
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ],
+      "package": "com.souravdg777.road"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -37,7 +42,13 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
         }
-      ]
-    ]
+      ],
+      "expo-sqlite"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "afbf69ac-406a-4180-a12e-fe285a82bacd"
+      }
+    }
   }
 }

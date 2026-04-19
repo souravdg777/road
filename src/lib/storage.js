@@ -1,59 +1,59 @@
-import * as FileSystem from 'expo-file-system/legacy';
+import * as SQLite from 'expo-sqlite';
 import { getTileCenter } from './spatial';
 
-const FILE_URI = FileSystem.documentDirectory + 'explored_tiles.json';
+let db = null;
 
-// Helper to read file
-const readFile = async () => {
-  try {
-    const content = await FileSystem.readAsStringAsync(FILE_URI);
-    return JSON.parse(content);
-  } catch (e) {
-    // File doesn't exist yet
-    return [];
-  }
-};
-
-// Helper to write file
-const writeFile = async (data) => {
-  await FileSystem.writeAsStringAsync(FILE_URI, JSON.stringify(data));
-};
-
+// 1. Explicit Init (Must be called in App.js)
 export const initDB = async () => {
-  // Check if file exists, if not create it
-  const fileInfo = await FileSystem.getInfoAsync(FILE_URI);
-  if (!fileInfo.exists) {
-    await writeFile([]);
-  }
-  return Promise.resolve();
-};
-
-export const saveTile = async (h3Id) => {
+  if (db) return; // Prevent double init
+  
   try {
-    const tiles = await readFile();
+    db = await SQLite.openDatabaseAsync('explorer_v1.db');
     
-    // Check if exists
-    if (!tiles.find(t => t.id === h3Id)) {
-      const center = getTileCenter(h3Id);
-      tiles.push({
-        id: h3Id,
-        lat: center.latitude,
-        lng: center.longitude,
-        timestamp: Date.now()
-      });
-      await writeFile(tiles);
-    }
+    await db.execAsync(`
+      PRAGMA journal_mode = WAL;
+      CREATE TABLE IF NOT EXISTS tiles (
+        id TEXT PRIMARY KEY NOT NULL,
+        lat REAL,
+        lng REAL
+      );
+      CREATE INDEX IF NOT EXISTS idx_coords ON tiles (lat, lng);
+    `);
+    
+    console.log("✅ Database initialized");
   } catch (e) {
-    console.error("Error saving tile", e);
+    console.error("❌ Database init failed", e);
+    throw e; // Crash early if DB fails to init
   }
 };
 
-export const getTilesInBounds = async (bounds, callback) => {
-  try {
-    const tiles = await readFile();
-    callback(tiles);
-  } catch (e) {
-    console.error("Error loading tiles", e);
-    callback([]);
-  }
+// 2. Minimal Save (Only ID + Center)
+export const saveTile = async (id) => {
+  if (!db) throw new Error("Database not initialized");
+  
+  const center = getTileCenter(id);
+  await db.runAsync(
+    'INSERT OR IGNORE INTO tiles (id, lat, lng) VALUES (?, ?, ?)',
+    [id, center.latitude, center.longitude]
+  );
+};
+
+// 3. Direct Return (No Callbacks)
+export const getTilesInBounds = async (bounds) => {
+  if (!db) throw new Error("Database not initialized");
+  
+  const latPad = Math.abs(bounds.northEast.latitude - bounds.southWest.latitude) * 0.3;
+  const lngPad = Math.abs(bounds.northEast.longitude - bounds.southWest.longitude) * 0.3;
+
+  const minLat = bounds.southWest.latitude - latPad;
+  const maxLat = bounds.northEast.latitude + latPad;
+  const minLng = bounds.southWest.longitude - lngPad;
+  const maxLng = bounds.northEast.longitude + lngPad;
+
+  const rows = await db.getAllAsync(
+    'SELECT id FROM tiles WHERE lat BETWEEN ? AND ? AND lng BETWEEN ? AND ?',
+    [minLat, maxLat, minLng, maxLng]
+  );
+  
+  return rows; // Return data directly
 };

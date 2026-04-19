@@ -2,13 +2,14 @@ import React, { useEffect } from 'react';
 import { StyleSheet, View, Button } from 'react-native';
 import ExplorerMap from './src/components/MapView';
 import { useLocation } from './src/hooks/useLocation';
-import { initDB } from './src/lib/storage';
+import { initDB } from './src/lib/storage'; // Import initDB
 
 export default function App() {
   const { isTracking, startTracking, stopTracking } = useLocation();
 
   useEffect(() => {
-    initDB();
+    // 2. Explicit Initialization
+    initDB().catch(e => console.error("Failed to init DB", e));
   }, []);
 
   return (

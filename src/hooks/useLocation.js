@@ -10,7 +10,9 @@ export const useLocation = () => {
   const subscription = useRef(null);
   const lastPosition = useRef(null);
   const lastTime = useRef(0);
-  const lastTileCache = useRef(null); // Prevent duplicate writes
+  
+  // 3. In-memory Deduplication
+  const lastTileCache = useRef(null); 
 
   const requestPermissions = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
@@ -26,14 +28,10 @@ export const useLocation = () => {
     if (!hasPermission) return;
 
     setIsTracking(true);
-    lastTileCache.current = null; // Reset cache
+    lastTileCache.current = null; // Reset on start
 
     subscription.current = await Location.watchPositionAsync(
-      {
-        accuracy: Location.Accuracy.High,
-        distanceInterval: 10,
-        timeInterval: 1000,
-      },
+      { accuracy: Location.Accuracy.High, distanceInterval: 10, timeInterval: 1000 },
       (location) => {
         const { latitude, longitude } = location.coords;
         const now = Date.now();
@@ -48,12 +46,13 @@ export const useLocation = () => {
         if (now - lastTime.current < MIN_UPDATE_TIME) return;
         if (lastPosition.current && calcDistance(lastPosition.current, { latitude, longitude }) < MIN_UPDATE_DISTANCE) return;
 
-        // Process
-        const h3Id = getTileId(latitude, longitude);
+        // Process Movement
+        const tileId = getTileId(latitude, longitude);
 
-        if (lastTileCache.current !== h3Id) {
-          saveTile(h3Id);
-          lastTileCache.current = h3Id;
+        // 3. Dedup Check: Only write if tile changed
+        if (lastTileCache.current !== tileId) {
+           saveTile(tileId).catch(e => console.log("Save error", e)); // Fire & forget
+           lastTileCache.current = tileId;
         }
 
         // Update Refs
