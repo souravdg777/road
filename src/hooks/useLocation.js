@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import * as Location from 'expo-location';
 import { getTileId } from '../lib/spatial';
-import { saveTile } from '../lib/storage';
+import { saveTile, incrementDistance } from '../lib/storage';
 import { calcDistance } from '../lib/utils';
 import { MIN_UPDATE_TIME, MIN_UPDATE_DISTANCE, JUMP_THRESHOLD } from '../lib/config';
 
@@ -10,9 +10,7 @@ export const useLocation = () => {
   const subscription = useRef(null);
   const lastPosition = useRef(null);
   const lastTime = useRef(0);
-  
-  // 3. In-memory Deduplication
-  const lastTileCache = useRef(null); 
+  const lastTileCache = useRef(null);
 
   const requestPermissions = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
@@ -28,7 +26,7 @@ export const useLocation = () => {
     if (!hasPermission) return;
 
     setIsTracking(true);
-    lastTileCache.current = null; // Reset on start
+    lastTileCache.current = null;
 
     subscription.current = await Location.watchPositionAsync(
       { accuracy: Location.Accuracy.High, distanceInterval: 10, timeInterval: 1000 },
@@ -44,14 +42,24 @@ export const useLocation = () => {
 
         // Throttle: Time & Distance
         if (now - lastTime.current < MIN_UPDATE_TIME) return;
-        if (lastPosition.current && calcDistance(lastPosition.current, { latitude, longitude }) < MIN_UPDATE_DISTANCE) return;
+        
+        let movedDistance = 0;
+        if (lastPosition.current) {
+           movedDistance = calcDistance(lastPosition.current, { latitude, longitude });
+           if (movedDistance < MIN_UPDATE_DISTANCE) return;
+        }
 
-        // Process Movement
+        // --- Update Stats & Tiles ---
+        
+        // 1. Update Distance (Fire and forget)
+        if (movedDistance > 0) {
+           incrementDistance(movedDistance).catch(e => console.log("Stat error", e));
+        }
+
+        // 2. Update Tiles
         const tileId = getTileId(latitude, longitude);
-
-        // 3. Dedup Check: Only write if tile changed
         if (lastTileCache.current !== tileId) {
-           saveTile(tileId).catch(e => console.log("Save error", e)); // Fire & forget
+           saveTile(tileId).catch(e => console.log("Save error", e));
            lastTileCache.current = tileId;
         }
 

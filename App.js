@@ -1,20 +1,21 @@
 import React, { useEffect } from 'react';
 import { StyleSheet, View, Button } from 'react-native';
 import ExplorerMap from './src/components/MapView';
+import StatsBar from './src/components/StatsBar';
 import { useLocation } from './src/hooks/useLocation';
-import { initDB } from './src/lib/storage'; // Import initDB
+import { initDB } from './src/lib/storage';
 
 export default function App() {
   const { isTracking, startTracking, stopTracking } = useLocation();
 
   useEffect(() => {
-    // 2. Explicit Initialization
     initDB().catch(e => console.error("Failed to init DB", e));
   }, []);
 
   return (
     <View style={styles.container}>
       <ExplorerMap />
+      <StatsBar />
       <View style={styles.controls}>
         <Button 
           title={isTracking ? "Stop Exploring" : "Start Exploring"} 
@@ -27,7 +28,9 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { 
+    flex: 1 
+  },
   controls: { 
     position: 'absolute', 
     bottom: 50, 
