@@ -35,5 +35,7 @@ export const CLOUD_DRIFT_LAYER_1_DURATION = 14000; // ms (deepest, slowest)
 export const CLOUD_DRIFT_LAYER_2_DURATION = 9000;  // ms (mid)
 export const CLOUD_DRIFT_LAYER_3_DURATION = 6000;  // ms (surface, fastest)
 
-// Base mist opacity layered over the dark map style
-export const CLOUD_BASE_OPACITY = 0.10;
+// Base mist opacity layered over the dark map style.
+// Keep low — patch circles stack additively, so the actual perceived
+// opacity at the screen centre is much higher than any single value here.
+export const CLOUD_BASE_OPACITY = 0.04;

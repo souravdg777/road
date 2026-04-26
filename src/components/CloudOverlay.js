@@ -38,26 +38,29 @@ const DRIFT_3_PCT = 0.07;  // surface:    +7%
 // ─── Cloud patch definitions (static layout, moved by drift animations) ───────
 // Each layer has several blurred white circles spread across the screen.
 // They're defined as fractions of screen size so they scale on any device.
+// Opacity values are intentionally very low — circles stack via SrcOver so
+// 13 overlapping patches at the screen centre compound to ~0.18-0.22 total.
+// Formula: 1 - (1-p)^n gives compound alpha for n equal layers.
 const LAYER_1_PATCHES = [
-  { cx: 0.15, cy: 0.20, r: 0.40, opacity: 0.07, blur: 18 },
-  { cx: 0.70, cy: 0.35, r: 0.45, opacity: 0.07, blur: 16 },
-  { cx: 0.40, cy: 0.75, r: 0.38, opacity: 0.06, blur: 20 },
-  { cx: 0.85, cy: 0.80, r: 0.42, opacity: 0.07, blur: 18 },
+  { cx: 0.15, cy: 0.20, r: 0.40, opacity: 0.025, blur: 18 },
+  { cx: 0.70, cy: 0.35, r: 0.45, opacity: 0.025, blur: 16 },
+  { cx: 0.40, cy: 0.75, r: 0.38, opacity: 0.020, blur: 20 },
+  { cx: 0.85, cy: 0.80, r: 0.42, opacity: 0.025, blur: 18 },
 ];
 
 const LAYER_2_PATCHES = [
-  { cx: 0.30, cy: 0.15, r: 0.30, opacity: 0.08, blur: 10 },
-  { cx: 0.75, cy: 0.50, r: 0.32, opacity: 0.07, blur: 12 },
-  { cx: 0.10, cy: 0.65, r: 0.28, opacity: 0.08, blur: 10 },
-  { cx: 0.55, cy: 0.90, r: 0.35, opacity: 0.07, blur: 11 },
+  { cx: 0.30, cy: 0.15, r: 0.30, opacity: 0.025, blur: 10 },
+  { cx: 0.75, cy: 0.50, r: 0.32, opacity: 0.022, blur: 12 },
+  { cx: 0.10, cy: 0.65, r: 0.28, opacity: 0.025, blur: 10 },
+  { cx: 0.55, cy: 0.90, r: 0.35, opacity: 0.022, blur: 11 },
 ];
 
 const LAYER_3_PATCHES = [
-  { cx: 0.50, cy: 0.10, r: 0.20, opacity: 0.05, blur: 5 },
-  { cx: 0.20, cy: 0.45, r: 0.22, opacity: 0.05, blur: 6 },
-  { cx: 0.80, cy: 0.25, r: 0.18, opacity: 0.04, blur: 5 },
-  { cx: 0.60, cy: 0.70, r: 0.24, opacity: 0.05, blur: 6 },
-  { cx: 0.35, cy: 0.90, r: 0.18, opacity: 0.04, blur: 5 },
+  { cx: 0.50, cy: 0.10, r: 0.20, opacity: 0.015, blur: 5 },
+  { cx: 0.20, cy: 0.45, r: 0.22, opacity: 0.015, blur: 6 },
+  { cx: 0.80, cy: 0.25, r: 0.18, opacity: 0.012, blur: 5 },
+  { cx: 0.60, cy: 0.70, r: 0.24, opacity: 0.015, blur: 6 },
+  { cx: 0.35, cy: 0.90, r: 0.18, opacity: 0.012, blur: 5 },
 ];
 
 // ─── Component ────────────────────────────────────────────────────────────────
