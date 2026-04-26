@@ -65,7 +65,7 @@ export default function ExplorerMap({ newTile }) {
   }, [newTile]);
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1 }} pointerEvents="box-none">
       {/* Base map — pan/zoom/gestures/user dot live here */}
       <MapView
         style={{ flex: 1 }}
@@ -75,22 +75,17 @@ export default function ExplorerMap({ newTile }) {
       />
 
       {/*
-        TEMPORARILY DISABLED: Skia Canvas blocks MapView touch gestures.
-        pointerEvents="none" does not reliably pass through in React Native.
-
-        Once map gestures confirmed working, we'll implement a proper fix:
-        - Move Canvas outside MapView hierarchy, or
-        - Capture map as image and render as static Skia layer, or
-        - Custom touch handler to re-dispatch map gestures
-
         Skia fog overlay — must be a sibling of MapView, not a child.
         A Skia Canvas cannot render inside react-native-maps' native layer.
+
+        pointerEvents="box-none" on the parent View ensures touches pass
+        through to the MapView beneath, while Canvas still renders on top.
       */}
-      {/* <CloudOverlay
+      <CloudOverlay
         tiles={tiles}
         newTile={newTile}
         region={region}
-      /> */}
+      />
     </View>
   );
 }

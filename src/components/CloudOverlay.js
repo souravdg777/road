@@ -159,7 +159,7 @@ export default function CloudOverlay({ tiles, newTile, region }) {
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
-    <Canvas style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} pointerEvents="none">
+    <Canvas style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
       {/*
         Outer Group with layer={true} creates an offscreen surface.
         This is required so that the DstOut blend group inside correctly
