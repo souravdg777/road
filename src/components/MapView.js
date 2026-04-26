@@ -1,54 +1,52 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import MapView, { Polygon } from 'react-native-maps';
+import { View } from 'react-native';
+import MapView from 'react-native-maps';
 import { getTilesInBounds } from '../lib/storage';
-import { getTilePolygon } from '../lib/spatial';
-import { MAX_TILES } from '../lib/config';
-import { UNEXPLORED_MAP_STYLE } from '../lib/config';
+import { MAX_TILES, UNEXPLORED_MAP_STYLE } from '../lib/config';
+import CloudOverlay from './CloudOverlay';
 
-export default function ExplorerMap({ activeTileId, newTile }) {
+export default function ExplorerMap({ newTile }) {
   const [tiles, setTiles] = useState([]);
-  const mapRef = useRef(null);
+  const [region, setRegion] = useState(null);
   const debounceTimer = useRef(null);
+  // Mirror of tiles state — readable inside effects without stale closures
+  const tilesRef = useRef([]);
 
-  const loadTiles = useCallback(async (region) => {
-    if (!region) return;
+  const loadTiles = useCallback(async (rgn) => {
+    if (!rgn) return;
 
     const bounds = {
       northEast: {
-        latitude: region.latitude + (region.latitudeDelta / 2),
-        longitude: region.longitude + (region.longitudeDelta / 2)
+        latitude:  rgn.latitude + rgn.latitudeDelta  / 2,
+        longitude: rgn.longitude + rgn.longitudeDelta / 2,
       },
       southWest: {
-        latitude: region.latitude - (region.latitudeDelta / 2),
-        longitude: region.longitude - (region.longitudeDelta / 2)
-      }
+        latitude:  rgn.latitude - rgn.latitudeDelta  / 2,
+        longitude: rgn.longitude - rgn.longitudeDelta / 2,
+      },
     };
 
     try {
       const rows = await getTilesInBounds(bounds);
-
       const safeRows = Array.isArray(rows) ? rows : [];
-      const cappedRows = safeRows.slice(0, MAX_TILES);
+      const loaded = safeRows
+        .slice(0, MAX_TILES)
+        .filter(row => row?.id)
+        .map(row => ({ id: row.id }));
 
-      const polygons = cappedRows
-        .filter((row) => row && row.id)
-        .map((row) => ({
-          id: row.id,
-          coords: getTilePolygon(row.id)
-        }));
-
-      setTiles(polygons);
+      tilesRef.current = loaded;
+      setTiles(loaded);
     } catch (e) {
-      console.error("Error loading tiles", e);
+      console.error('Error loading tiles', e);
     }
   }, []);
 
-  const onRegionChange = (region) => {
+  // Debounce tile DB queries; update region state immediately for CloudOverlay.
+  const onRegionChange = useCallback((rgn) => {
+    setRegion(rgn);
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
-    debounceTimer.current = setTimeout(() => {
-      loadTiles(region);
-    }, 300);
-  };
+    debounceTimer.current = setTimeout(() => loadTiles(rgn), 300);
+  }, [loadTiles]);
 
   useEffect(() => {
     return () => {
@@ -56,35 +54,35 @@ export default function ExplorerMap({ activeTileId, newTile }) {
     };
   }, []);
 
-  // Merge newly-unlocked tile instantly without DB re-query
+  // Merge a newly-unlocked tile instantly (no DB re-query needed).
   useEffect(() => {
     if (!newTile?.id) return;
-    setTiles(prev => {
-      if (prev.some(t => t.id === newTile.id)) return prev;
-      return [...prev, { id: newTile.id, coords: getTilePolygon(newTile.id) }];
-    });
+    if (tilesRef.current.some(t => t.id === newTile.id)) return;
+
+    const updated = [...tilesRef.current, { id: newTile.id }];
+    tilesRef.current = updated;
+    setTiles(updated);
   }, [newTile]);
 
   return (
-    <MapView
-      ref={mapRef}
-      style={{ flex: 1 }}
-      customMapStyle={UNEXPLORED_MAP_STYLE}
-      onRegionChangeComplete={onRegionChange}
-      showsUserLocation={true}
-    >
-      {tiles.map(tile => {
-        const isActive = tile.id === activeTileId;
-        return (
-          <Polygon
-            key={tile.id}
-            coordinates={tile.coords.map(c => ({ latitude: c[0], longitude: c[1] }))}
-            strokeColor={isActive ? "rgba(255, 200, 0, 1)" : "rgba(0, 255, 255, 0.8)"}
-            strokeWidth={isActive ? 3 : 2}
-            fillColor={isActive ? "rgba(255, 200, 0, 0.55)" : "rgba(0, 255, 255, 0.35)"}
-          />
-        );
-      })}
-    </MapView>
+    <View style={{ flex: 1 }}>
+      {/* Base map — pan/zoom/gestures/user dot live here */}
+      <MapView
+        style={{ flex: 1 }}
+        customMapStyle={UNEXPLORED_MAP_STYLE}
+        onRegionChangeComplete={onRegionChange}
+        showsUserLocation={true}
+      />
+
+      {/*
+        Skia fog overlay — must be a sibling of MapView, not a child.
+        A Skia Canvas cannot render inside react-native-maps' native layer.
+      */}
+      <CloudOverlay
+        tiles={tiles}
+        newTile={newTile}
+        region={region}
+      />
+    </View>
   );
 }
