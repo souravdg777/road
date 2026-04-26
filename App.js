@@ -30,7 +30,7 @@ export default function App() {
 
   return (
     <View style={styles.container}>
-      <ExplorerMap activeTileId={activeTileId} newTile={newTile} />
+      <ExplorerMap newTile={newTile} />
       <StatsBar
         isTracking={isTracking}
         sessionDistance={sessionDistance}
