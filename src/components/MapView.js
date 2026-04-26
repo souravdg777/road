@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import MapView from 'react-native-maps';
 import { getTilesInBounds } from '../lib/storage';
 import { MAX_TILES, UNEXPLORED_MAP_STYLE } from '../lib/config';
-import CloudOverlay from './CloudOverlay';
+import StaticMistOverlay from './StaticMistOverlay';
 
 export default function ExplorerMap({ newTile }) {
   const [tiles, setTiles] = useState([]);
@@ -75,19 +75,13 @@ export default function ExplorerMap({ newTile }) {
       />
 
       {/*
-        Skia fog overlay — rendered as an absolutely-positioned overlay
-        on top of the map. pointerEvents="none" on Canvas itself allows
-        touches to pass through to MapView.
+        Static mist overlay — rendered as a pre-computed image, not a Canvas.
+        Images with pointerEvents="none" are transparent to all touches.
 
-        KEY: Canvas is now OUTSIDE the flex container hierarchy, rendered
-        as a true overlay. This prevents it from interfering with flex layout
-        and touch event propagation.
+        TODO: Tile blobs and bloom animations will be re-enabled once we
+        solve the touch-blocking issue with Skia Canvas.
       */}
-      <CloudOverlay
-        tiles={tiles}
-        newTile={newTile}
-        region={region}
-      />
+      <StaticMistOverlay />
     </View>
   );
 }
