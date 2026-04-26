@@ -38,9 +38,9 @@ export default function App() {
       />
       <View style={styles.controls}>
         <Button
-          title={isTracking ? "Stop Exploring" : "Start Exploring"}
+          title={isTracking ? "Stop Exploring v3" : "Start Exploring v3"}
           onPress={isTracking ? stopTracking : startTracking}
-          color={isTracking ? "red" : "green"}
+          color={isTracking ? "blue" : "blue"}
         />
       </View>
     </View>
