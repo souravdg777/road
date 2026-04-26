@@ -39,25 +39,25 @@ const DRIFT_3_PCT = 0.07;  // surface:    +7%
 // Each layer has several blurred white circles spread across the screen.
 // They're defined as fractions of screen size so they scale on any device.
 const LAYER_1_PATCHES = [
-  { cx: 0.15, cy: 0.20, r: 0.40, opacity: 0.10, blur: 18 },
-  { cx: 0.70, cy: 0.35, r: 0.45, opacity: 0.10, blur: 16 },
-  { cx: 0.40, cy: 0.75, r: 0.38, opacity: 0.08, blur: 20 },
-  { cx: 0.85, cy: 0.80, r: 0.42, opacity: 0.10, blur: 18 },
+  { cx: 0.15, cy: 0.20, r: 0.40, opacity: 0.07, blur: 18 },
+  { cx: 0.70, cy: 0.35, r: 0.45, opacity: 0.07, blur: 16 },
+  { cx: 0.40, cy: 0.75, r: 0.38, opacity: 0.06, blur: 20 },
+  { cx: 0.85, cy: 0.80, r: 0.42, opacity: 0.07, blur: 18 },
 ];
 
 const LAYER_2_PATCHES = [
-  { cx: 0.30, cy: 0.15, r: 0.30, opacity: 0.12, blur: 10 },
-  { cx: 0.75, cy: 0.50, r: 0.32, opacity: 0.10, blur: 12 },
-  { cx: 0.10, cy: 0.65, r: 0.28, opacity: 0.12, blur: 10 },
-  { cx: 0.55, cy: 0.90, r: 0.35, opacity: 0.10, blur: 11 },
+  { cx: 0.30, cy: 0.15, r: 0.30, opacity: 0.08, blur: 10 },
+  { cx: 0.75, cy: 0.50, r: 0.32, opacity: 0.07, blur: 12 },
+  { cx: 0.10, cy: 0.65, r: 0.28, opacity: 0.08, blur: 10 },
+  { cx: 0.55, cy: 0.90, r: 0.35, opacity: 0.07, blur: 11 },
 ];
 
 const LAYER_3_PATCHES = [
-  { cx: 0.50, cy: 0.10, r: 0.20, opacity: 0.08, blur: 5 },
-  { cx: 0.20, cy: 0.45, r: 0.22, opacity: 0.08, blur: 6 },
-  { cx: 0.80, cy: 0.25, r: 0.18, opacity: 0.06, blur: 5 },
-  { cx: 0.60, cy: 0.70, r: 0.24, opacity: 0.08, blur: 6 },
-  { cx: 0.35, cy: 0.90, r: 0.18, opacity: 0.06, blur: 5 },
+  { cx: 0.50, cy: 0.10, r: 0.20, opacity: 0.05, blur: 5 },
+  { cx: 0.20, cy: 0.45, r: 0.22, opacity: 0.05, blur: 6 },
+  { cx: 0.80, cy: 0.25, r: 0.18, opacity: 0.04, blur: 5 },
+  { cx: 0.60, cy: 0.70, r: 0.24, opacity: 0.05, blur: 6 },
+  { cx: 0.35, cy: 0.90, r: 0.18, opacity: 0.04, blur: 5 },
 ];
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -156,7 +156,7 @@ export default function CloudOverlay({ tiles, newTile, region }) {
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
-    <Canvas style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+    <Canvas style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} pointerEvents="none">
       {/*
         Outer Group with layer={true} creates an offscreen surface.
         This is required so that the DstOut blend group inside correctly
