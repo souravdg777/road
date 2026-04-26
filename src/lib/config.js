@@ -8,9 +8,22 @@ export const JUMP_THRESHOLD = 100;
 // Rendering
 export const MAX_TILES = 2000;
 export const ACTIVE_TILE_DURATION = 1000;
+// Dark, desaturated style — gives the "unexplored = fog" feel without an
+// overlay layer. Bright tile circles pop visually against this background.
 export const UNEXPLORED_MAP_STYLE = [
-  { featureType: "all", stylers: [{ saturation: -100 }, { lightness: -30 }] }
+  { featureType: "all", stylers: [{ saturation: -100 }, { lightness: -65 }] }
 ];
+
+// ─── Explored Tile Circles (native react-native-maps overlays) ──────────────
+// Each explored tile is rendered as a native Circle on the map. Radius is in
+// METERS (not pixels) — the Google Maps SDK scales it automatically with zoom.
+// Tiles are 25m grid cells, so a 16m radius gives subtle overlap with neighbors,
+// blending adjacent circles into organic blob shapes (no grid lines visible).
+export const TILE_CIRCLE_RADIUS_M = 16;
+
+// Warm amber, semi-transparent — visible against the dark map style above.
+// Adjacent overlapping circles compound to a slightly brighter glow.
+export const TILE_CIRCLE_FILL = "rgba(255, 200, 100, 0.55)";
 
 // Fog gradient — white fill opacities layered over the dark map style
 // 1 tile from explored edge (inner fog boundary)

@@ -1,13 +1,39 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { View } from 'react-native';
-import MapView from 'react-native-maps';
+import MapView, { Circle } from 'react-native-maps';
 import { getTilesInBounds } from '../lib/storage';
-import { MAX_TILES, UNEXPLORED_MAP_STYLE } from '../lib/config';
-import StaticMistOverlay from './StaticMistOverlay';
+import { getTileCenter } from '../lib/spatial';
+import {
+  MAX_TILES,
+  UNEXPLORED_MAP_STYLE,
+  TILE_CIRCLE_RADIUS_M,
+  TILE_CIRCLE_FILL,
+} from '../lib/config';
 
+/**
+ * ExplorerMap — base map with native Circle overlays for explored tiles.
+ *
+ * Architecture decision (2026-04-27):
+ * Earlier attempts used either a Skia Canvas overlay or a sibling <View>
+ * overlay containing fog/mist + tile blobs. Both failed:
+ *   - Skia Canvas captured touches, breaking map pan/zoom.
+ *   - Sibling Views were occluded on Android because react-native-maps
+ *     renders to a SurfaceView, a separate native window. Views inside
+ *     the same parent as MapView don't reliably composite on top.
+ *
+ * The fix: render explored tiles as native map features (Circle children
+ * of MapView). They're drawn by the Google Maps SDK itself, so:
+ *   - They render correctly on top of the map (they ARE the map)
+ *   - They auto-pan/zoom with no manual projection math
+ *   - Touches pass through (native map features don't capture gestures)
+ *   - No View hierarchy z-order issues
+ *
+ * The "fog" feel comes from a dark map style — unexplored areas look dim,
+ * bright warm circles on explored tiles pop visually. Dark = unexplored,
+ * bright = where you've been.
+ */
 export default function ExplorerMap({ newTile }) {
   const [tiles, setTiles] = useState([]);
-  const [region, setRegion] = useState(null);
   const debounceTimer = useRef(null);
   // Mirror of tiles state — readable inside effects without stale closures
   const tilesRef = useRef([]);
@@ -41,9 +67,8 @@ export default function ExplorerMap({ newTile }) {
     }
   }, []);
 
-  // Debounce tile DB queries; update region state immediately for CloudOverlay.
+  // Debounce tile DB queries so we don't thrash SQLite while panning.
   const onRegionChange = useCallback((rgn) => {
-    setRegion(rgn);
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
     debounceTimer.current = setTimeout(() => loadTiles(rgn), 300);
   }, [loadTiles]);
@@ -64,24 +89,31 @@ export default function ExplorerMap({ newTile }) {
     setTiles(updated);
   }, [newTile]);
 
+  // Pre-compute centers so each render isn't recomputing them per Circle.
+  const tileCenters = useMemo(
+    () => tiles.map(t => ({ id: t.id, ...getTileCenter(t.id) })),
+    [tiles]
+  );
+
   return (
     <View style={{ flex: 1 }}>
-      {/* Base map — only layer that can receive touches */}
       <MapView
         style={{ flex: 1 }}
         customMapStyle={UNEXPLORED_MAP_STYLE}
         onRegionChangeComplete={onRegionChange}
         showsUserLocation={true}
-      />
-
-      {/*
-        Static mist overlay — rendered as a pre-computed image, not a Canvas.
-        Images with pointerEvents="none" are transparent to all touches.
-
-        TODO: Tile blobs and bloom animations will be re-enabled once we
-        solve the touch-blocking issue with Skia Canvas.
-      */}
-      <StaticMistOverlay />
+      >
+        {tileCenters.map(t => (
+          <Circle
+            key={t.id}
+            center={{ latitude: t.latitude, longitude: t.longitude }}
+            radius={TILE_CIRCLE_RADIUS_M}
+            fillColor={TILE_CIRCLE_FILL}
+            strokeColor="rgba(0,0,0,0)"
+            strokeWidth={0}
+          />
+        ))}
+      </MapView>
     </View>
   );
 }
