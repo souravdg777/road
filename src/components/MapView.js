@@ -65,8 +65,8 @@ export default function ExplorerMap({ newTile }) {
   }, [newTile]);
 
   return (
-    <View style={{ flex: 1 }} pointerEvents="box-none">
-      {/* Base map — pan/zoom/gestures/user dot live here */}
+    <View style={{ flex: 1 }}>
+      {/* Base map — only layer that can receive touches */}
       <MapView
         style={{ flex: 1 }}
         customMapStyle={UNEXPLORED_MAP_STYLE}
@@ -75,11 +75,13 @@ export default function ExplorerMap({ newTile }) {
       />
 
       {/*
-        Skia fog overlay — must be a sibling of MapView, not a child.
-        A Skia Canvas cannot render inside react-native-maps' native layer.
+        Skia fog overlay — rendered as an absolutely-positioned overlay
+        on top of the map. pointerEvents="none" on Canvas itself allows
+        touches to pass through to MapView.
 
-        pointerEvents="box-none" on the parent View ensures touches pass
-        through to the MapView beneath, while Canvas still renders on top.
+        KEY: Canvas is now OUTSIDE the flex container hierarchy, rendered
+        as a true overlay. This prevents it from interfering with flex layout
+        and touch event propagation.
       */}
       <CloudOverlay
         tiles={tiles}
