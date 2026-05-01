@@ -18,7 +18,7 @@ export default function App() {
     activeTileTimer.current = setTimeout(() => setActiveTileId(null), ACTIVE_TILE_DURATION);
   }, []);
 
-  const { isTracking, startTracking, stopTracking, sessionDistance, sessionTileCount } =
+  const { isTracking, startTracking, stopTracking, sessionDistance, sessionTileCount, sessionPath } =
     useLocation({ onNewTile: handleNewTile });
 
   useEffect(() => {
@@ -30,7 +30,7 @@ export default function App() {
 
   return (
     <View style={styles.container}>
-      <ExplorerMap newTile={newTile} />
+      <ExplorerMap newTile={newTile} sessionPath={sessionPath} />
       <StatsBar
         isTracking={isTracking}
         sessionDistance={sessionDistance}

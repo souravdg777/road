@@ -12,7 +12,7 @@ export const initDB = async () => {
     
     await db.execAsync(`
       PRAGMA journal_mode = WAL;
-      
+
       -- Tiles Table
       CREATE TABLE IF NOT EXISTS tiles (
         id TEXT PRIMARY KEY NOT NULL,
@@ -20,7 +20,16 @@ export const initDB = async () => {
         lng REAL
       );
       CREATE INDEX IF NOT EXISTS idx_coords ON tiles (lat, lng);
-      
+
+      -- Path Points Table — exact GPS fixes in exploration order
+      CREATE TABLE IF NOT EXISTS path_points (
+        id    INTEGER PRIMARY KEY AUTOINCREMENT,
+        lat   REAL    NOT NULL,
+        lng   REAL    NOT NULL,
+        ts    INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_path_ts ON path_points (ts);
+
       -- Stats Table (Key-Value Store)
       CREATE TABLE IF NOT EXISTS stats (
         key TEXT PRIMARY KEY NOT NULL,
@@ -52,7 +61,25 @@ export const saveTile = async (id) => {
   );
 };
 
-// 3. Get Tiles in Bounds
+// 3a. Save a raw GPS path point
+export const savePathPoint = async (lat, lng) => {
+  if (!db) throw new Error("Database not initialized");
+  await db.runAsync(
+    'INSERT INTO path_points (lat, lng, ts) VALUES (?, ?, ?)',
+    [lat, lng, Date.now()]
+  );
+};
+
+// 3b. Load ALL path points in exploration order (for drawing the trail)
+export const getAllPathPoints = async () => {
+  if (!db) throw new Error("Database not initialized");
+  const rows = await db.getAllAsync(
+    'SELECT lat, lng FROM path_points ORDER BY ts ASC'
+  );
+  return rows.map(r => ({ latitude: r.lat, longitude: r.lng }));
+};
+
+// 4. Get Tiles in Bounds
 export const getTilesInBounds = async (bounds) => {
   if (!db) throw new Error("Database not initialized");
   

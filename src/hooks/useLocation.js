@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import * as Location from 'expo-location';
 import { getTileId } from '../lib/spatial';
-import { saveTile, incrementDistance } from '../lib/storage';
+import { saveTile, savePathPoint, incrementDistance } from '../lib/storage';
 import { calcDistance } from '../lib/utils';
 import { MIN_UPDATE_TIME, MIN_UPDATE_DISTANCE, JUMP_THRESHOLD } from '../lib/config';
 
@@ -9,6 +9,9 @@ export const useLocation = ({ onNewTile, onDistance } = {}) => {
   const [isTracking, setIsTracking] = useState(false);
   const [sessionDistance, setSessionDistance] = useState(0);
   const [sessionTileCount, setSessionTileCount] = useState(0);
+  // In-memory ordered GPS fixes for this session — extends the DB path
+  // with zero lag so the live tip of the trail updates instantly.
+  const [sessionPath, setSessionPath] = useState([]);
   const subscription = useRef(null);
   const lastPosition = useRef(null);
   const lastTime = useRef(0);
@@ -30,6 +33,7 @@ export const useLocation = ({ onNewTile, onDistance } = {}) => {
     setIsTracking(true);
     setSessionDistance(0);
     setSessionTileCount(0);
+    setSessionPath([]);
     lastTileCache.current = null;
     lastPosition.current = null;
     lastTime.current = 0;
@@ -55,16 +59,20 @@ export const useLocation = ({ onNewTile, onDistance } = {}) => {
            if (movedDistance < MIN_UPDATE_DISTANCE) return;
         }
 
-        // --- Update Stats & Tiles ---
+        // --- Update Stats, Path & Tiles ---
 
-        // 1. Update Distance (Fire and forget)
+        // 1. Save exact GPS point to path (fire and forget)
+        savePathPoint(latitude, longitude).catch(e => console.log("Path error", e));
+        setSessionPath(p => [...p, { latitude, longitude }]);
+
+        // 2. Update Distance
         if (movedDistance > 0) {
            incrementDistance(movedDistance).catch(e => console.log("Stat error", e));
            setSessionDistance(d => d + movedDistance);
            onDistance?.(movedDistance);
         }
 
-        // 2. Update Tiles
+        // 3. Update Tiles
         const tileId = getTileId(latitude, longitude);
         if (lastTileCache.current !== tileId) {
            saveTile(tileId).catch(e => console.log("Save error", e));
@@ -89,5 +97,5 @@ export const useLocation = ({ onNewTile, onDistance } = {}) => {
     lastTileCache.current = null;
   };
 
-  return { isTracking, startTracking, stopTracking, sessionDistance, sessionTileCount };
+  return { isTracking, startTracking, stopTracking, sessionDistance, sessionTileCount, sessionPath };
 };

@@ -14,16 +14,27 @@ export const UNEXPLORED_MAP_STYLE = [
   { featureType: "all", stylers: [{ saturation: -100 }, { lightness: -65 }] }
 ];
 
-// ─── Explored Tile Circles (native react-native-maps overlays) ──────────────
-// Each explored tile is rendered as a native Circle on the map. Radius is in
-// METERS (not pixels) — the Google Maps SDK scales it automatically with zoom.
-// Tiles are 25m grid cells, so a 16m radius gives subtle overlap with neighbors,
-// blending adjacent circles into organic blob shapes (no grid lines visible).
-export const TILE_CIRCLE_RADIUS_M = 16;
+// ─── Fog of War (native Polygon overlay) ─────────────────────────────────────
+// A dark Polygon covers the entire visible region. Circular holes are punched
+// at each explored tile, revealing the map underneath.
+export const FOG_COLOR = 'rgba(15, 20, 30, 0.78)';
 
-// Warm amber, semi-transparent — visible against the dark map style above.
-// Adjacent overlapping circles compound to a slightly brighter glow.
-export const TILE_CIRCLE_FILL = "rgba(255, 200, 100, 0.55)";
+// Hole radius in degrees. GRID_SIZE = 0.0002 deg (~22m). Using 1.15× so
+// adjacent tile holes overlap slightly — they merge into organic blobs.
+export const TILE_HOLE_RADIUS_DEG = 0.00023;
+
+// Points used to approximate each circular hole as a polygon.
+// 24 gives smooth curves; fewer = faceted, more = diminishing returns.
+export const TILE_HOLE_POINTS = 24;
+
+// ─── GPS Trail (native Polyline) ─────────────────────────────────────────────
+// Two stacked Polylines create a glow effect:
+//   outer: thick, dim — the bloom halo
+//   inner: thin, bright — the core light
+export const TRAIL_OUTER_COLOR = 'rgba(255, 190, 60, 0.35)';
+export const TRAIL_OUTER_WIDTH = 14;
+export const TRAIL_INNER_COLOR = 'rgba(255, 230, 140, 0.95)';
+export const TRAIL_INNER_WIDTH = 4;
 
 // Fog gradient — white fill opacities layered over the dark map style
 // 1 tile from explored edge (inner fog boundary)
